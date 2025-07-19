@@ -26,7 +26,15 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
+				},
+				status: {
+					ui: 'hsl(var(--status-ui))',
+					feature: 'hsl(var(--status-feature))',
+					pricing: 'hsl(var(--status-pricing))',
+					bug: 'hsl(var(--status-bug))',
+					performance: 'hsl(var(--status-performance))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
