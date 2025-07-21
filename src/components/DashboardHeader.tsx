@@ -2,7 +2,20 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Eye, TrendingUp, Users, Zap } from 'lucide-react';
 
+const BACKEND_URL = 'http://localhost:8000';
+
 export const DashboardHeader = () => {
+  // Handler for the Trigger Scrape button
+  const handleTriggerScrape = async () => {
+    try {
+      await fetch(`${BACKEND_URL}/scrape`, { method: 'POST' });
+      // Optionally, reload the page to show new updates
+      window.location.reload();
+    } catch (e) {
+      alert('Failed to trigger scrape. Backend may be down.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Hero Section */}
@@ -75,7 +88,7 @@ export const DashboardHeader = () => {
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Button className="gap-2 bg-gradient-primary hover:shadow-glow transition-all duration-300">
+        <Button className="gap-2 bg-gradient-primary hover:shadow-glow transition-all duration-300" onClick={handleTriggerScrape}>
           <Zap className="w-4 h-4" />
           Trigger Scrape
         </Button>

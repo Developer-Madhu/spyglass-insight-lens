@@ -5,14 +5,36 @@ import { UpdateFiltersComponent } from './UpdateFilters';
 import { mockUpdates } from '../data/mockUpdates';
 import { Search, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
+import { useQuery } from '@tanstack/react-query';
+
+const BACKEND_URL = 'http://localhost:8000';
 
 export const UpdatesList = () => {
   const [filters, setFilters] = useState<UpdateFilters>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Fetch updates from backend
+  const { data: updatesData, isLoading: isQueryLoading, refetch } = useQuery({
+    queryKey: ['updates'],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.source) params.append('product', filters.source);
+      if (filters.type) params.append('type', filters.type);
+      if (filters.dateRange?.start) params.append('date', filters.dateRange.start);
+      // Only pass one date param for now; can be extended for range
+      const res = await fetch(`${BACKEND_URL}/updates?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch updates');
+      const data = await res.json();
+      // Add fallback id if missing
+      return data.map((u, i) => ({ id: u.id || `${u.product}-${u.date}-${i}`, ...u }));
+    },
+    retry: false,
+    staleTime: 60 * 1000,
+  });
+
   const filteredUpdates = useMemo(() => {
-    let filtered = mockUpdates;
+    let filtered = updatesData || mockUpdates;
 
     // Filter by source
     if (filters.source) {
@@ -45,12 +67,11 @@ export const UpdatesList = () => {
 
     // Sort by date (newest first)
     return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [filters, searchQuery]);
+  }, [updatesData, filters, searchQuery]);
 
   const handleRefresh = async () => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await refetch();
     setIsLoading(false);
   };
 
@@ -61,7 +82,7 @@ export const UpdatesList = () => {
         filters={filters}
         onFiltersChange={setFilters}
         onRefresh={handleRefresh}
-        isLoading={isLoading}
+        isLoading={isLoading || isQueryLoading}
       />
 
       {/* Search */}
@@ -87,13 +108,19 @@ export const UpdatesList = () => {
         </div>
 
         {filteredUpdates.length === 0 ? (
-          <div className="text-center py-12 space-y-3">
-            <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground" />
-            <h3 className="text-lg font-medium">No updates found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your filters or search query to see more results.
-            </p>
-          </div>
+          (updatesData && updatesData.length > 0) ? (
+            <div className="grid gap-6">
+              <UpdateCard
+                update={
+                  filters.source
+                    ? updatesData
+                        .filter(u => u.product === filters.source)
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+                    : updatesData.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+                }
+              />
+            </div>
+          ) : null
         ) : (
           <div className="grid gap-6">
             {filteredUpdates.map((update) => (
